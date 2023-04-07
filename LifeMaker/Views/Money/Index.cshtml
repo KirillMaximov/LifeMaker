@@ -1,0 +1,348 @@
+﻿@using LifeMaker.Models.MoneySpendings;
+@model MoneySpendings
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Money";
+}
+
+<link type="text/css" rel="StyleSheet" href="https://bootstraptema.ru/plugins/2016/shieldui/style.css" />
+<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.3/css/all.css" />
+<script src="https://bootstraptema.ru/plugins/2016/shieldui/script.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+    #doughnutChart {
+        max-width: 350px;
+        max-height: 350px;
+    }
+
+    #insertRowForm > tbody > tr > td {
+        width: 200px;
+        padding: 0 10px 0 0px;
+        margin: 0px;
+    }
+
+    .float-right.search.btn-group > input { 
+        border-radius: 0;
+    }
+</style>
+
+<div class="row shadow-lg p-3">
+    <div class="row">
+        <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+            <h1 class="h2">Dashboard</h1>
+            <div class="btn-group" role="group" aria-label="Basic example">
+                <button id="leftMonth" type="button" class="btn btn-outline-secondary" style="border-top-left-radius: 5px; border-bottom-left-radius: 5px;"><<</button>
+                <div id="thisMonth" class="input-group-text rounded-0" style="width: 150px; align-content: center;">This month</div>
+                <button id="rightMonth" type="button" class="btn btn-outline-secondary" style="border-top-right-radius: 5px; border-bottom-right-radius: 5px;">>></button>
+            </div>
+        </div>
+     </div>
+
+    <div class="row mb-2 moneyContent">
+        <div class="col-md-9">
+            <div id="lineChart">
+                @*Content*@
+            </div>
+        </div>
+        <div class="col-md-3">
+            <canvas id="doughnutChart">
+                @*Content*@
+            </canvas>
+        </div>
+    </div>
+
+    <div class="row p-3" id="progressPersons">
+        @*Content*@
+    </div>
+
+    <div class="row moneyContent">
+        <div class="col-md-12">
+
+            <button class="purchasesTableToolbar btn btn-outline-primary rounded-0" id="insertRow"> Добавить новую запись</button>
+
+            <table class="table"
+                   data-page-list="[5, 10, 50]"
+                   data-page-size="5"
+               
+                   data-pagination="true"
+                   data-side-pagination="server"
+                   data-query-params-type="Else"
+                   data-search="true"
+                   data-toggle="table" 
+                   @*data-url="/Money/Get"*@
+                   data-trim-on-search="false"
+                   data-locale="ru-RU"
+                   data-loading-font-size="16px"
+                   data-toolbar=".purchasesTableToolbar"
+                   id="purchasesTable">
+                <thead>
+                    <tr>
+                        <th data-field="amount" data-sortable="true">Сумма</th>
+                        <th data-field="description" data-sortable="true">Описание</th>
+                        <th data-field="category.name" data-sortable="true">Категория</th>
+                        <th data-field="person.name" data-sortable="true">Кто купил</th>
+                        <th data-field="createDate" data-sortable="true" data-formatter="dateFormatter">Дата</th>
+                    </tr>
+                </thead>
+            </table>
+            <table class="purchasesTableToolbar" id="insertRowForm" style="display: none;">
+                <tr>
+                    <td>@Html.TextBoxFor(m => m.Amount, new {@class = "form-control rounded-0", @placeholder = "Сумма"})</td>
+                    <td>@Html.TextBoxFor(m => m.Description, new {@class = "form-control rounded-0", @placeholder = "Описание"})</td>
+                    <td>@Html.DropDownListFor(m => m.CategoryId, Model.CategoryDDL, "Категория", new {@class = "form-select rounded-0", id = "CategoryDDL"})</td>
+                    <td>@Html.DropDownListFor(m => m.PersonId, Model.PersonDDL, "Кто купил", new {@class = "form-select rounded-0", id = "PersonDDL"})</td>
+                    <td>@Html.TextBoxFor(m => m.CreateDate, new {@class = "form-control rounded-0", @placeholder = "Дата", @id = "CreateDateDTP", @readonly = "true"})</td>
+                    <td>
+                        <button class="btn btn-outline-success rounded-0" id="acceptRow"> Добавить</button>
+                        <button class="btn btn-outline-danger rounded-0" id="cancelRow"> Отмена</button>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<script>
+    var month = {
+        1: "Январь",
+        2: "Февраль",
+        3: "Март",
+        4: "Апрель",
+        5: "Май",
+        6: "Июнь",
+        7: "Июль",
+        8: "Август",
+        9: "Сентябрь",
+        10: "Октябрь",
+        11: "Ноябрь",
+        12: "Декабрь",
+    };
+
+    var monthNumber = new Date().getMonth() + 1;
+
+    $('#thisMonth')[0].innerText = month[monthNumber].toString();
+
+    $('#leftMonth').click(function (){
+        if (monthNumber == 1) monthNumber = 13; monthNumber = monthNumber - 1;
+
+        RefreshPageElements(monthNumber);
+
+        $('#thisMonth')[0].innerText = month[monthNumber].toString();
+    });
+    $('#rightMonth').click(function () {
+        if (monthNumber == 12) monthNumber = 0; monthNumber = monthNumber + 1;
+
+        RefreshPageElements(monthNumber);
+
+        $('#thisMonth')[0].innerText = month[monthNumber].toString();
+    });
+
+        $.datetimepicker.setLocale('ru');
+    $('#CreateDateDTP').datetimepicker({
+        format: 'd.m.Y H:i',
+        lang: 'ru'
+    });
+
+    $("#insertRow").on("click", function (event) {
+        $('#Amount').val('');
+        $('#Description').val('');
+        $('#CategoryDDL').val('');
+        $('#PersonDDL').val('');
+        $('#CreateDateDTP').val('');
+
+        $('#insertRow').hide();
+        $('#insertRowForm').fadeIn(1000);
+    });
+
+    $("#cancelRow").on("click", function (event) {
+        $('#insertRowForm').hide();
+        $('#insertRow').fadeIn(1000);
+    });
+
+    $('#acceptRow').on("click", function (event) {
+        var model = {
+            Amount: $('#Amount').val(),
+            Description: $('#Description').val(),
+            CategoryId: $('#CategoryDDL').val(),
+            PersonId: $('#PersonDDL').val(),
+            CreateDate: $('#CreateDateDTP').val()
+        };
+        $.ajax({
+            url: '/Money/Create',
+            type: 'POST',
+            data: model,
+            success: function (response) {
+                RefreshPageElements(monthNumber);
+                $('#insertRowForm').hide();
+                $('#insertRow').fadeIn(1000);
+            }
+        });
+    });
+</script>
+
+<script>
+
+    $(document).ready(function(){
+        RefreshPageElements(monthNumber);
+    });
+
+    function RefreshPageElements(monthNumber) {
+
+        //$('#purchasesTable').bootstrapTable('append', { 'monthNumber': monthNumber }).
+        //$('#purchasesTable').bootstrapTable('refresh', new { 'qwe': monthNumber  });
+
+        $('#purchasesTable').bootstrapTable('refresh', { url: '/Money/Get?monthNumber=' + monthNumber });
+
+        GetLineChartData(monthNumber);
+        GetDoughnutChartData(monthNumber);
+        GetProgressBars(monthNumber);
+    }
+
+    function GetProgressBars(monthNumber)
+    {
+        $.ajax({
+            url: '/Money/GetProgressBars',
+            type: 'GET',
+            data: { 'monthNumber': monthNumber },
+            success: function (response) {
+                console.log(response);
+
+                clearElement('#progressPersons', '#progressPersons > .progressPerson');
+
+                response.forEach((element) => {
+                    $('#progressPersons').append(
+                        '<div class="col-md-6 progressPerson">' +
+                            '<p>Потратил(а) ' + element.person + '</p>' +
+                            '<div class="progress rounded-0" role="progressbar" aria-label="Basic example" aria-valuenow="' + element.percent + '" aria-valuemin="0" aria-valuemax="100">' +
+                                '<div class="progress-bar bg-info" style="width: ' + element.percent + '%">' + element.amount + ' ₽</div>' +
+                            '</div>' +
+                        '</div>'
+                    );
+                })
+            }
+        });
+    }
+
+    function GetLineChartData(monthNumber) {
+        $.ajax({
+            url: '/Money/GetLineChart',
+            type: 'GET',
+            data: { 'monthNumber': monthNumber },
+            success: function (response) {
+                console.log(response);
+
+                let category = response.category;
+                let amount = response.amount;
+                let static = response.statics;
+
+                $("#lineChart").shieldChart({
+                    theme: "light",
+                    primaryHeader: {
+                        text: "Обзор расходов"
+                    },
+                    exportOptions: {
+                        image: false,
+                        print: false
+                    },
+                    axisX: {
+                        categoricalValues: category
+                    },
+                    tooltipSettings: {
+                        chartBound: true,
+                        axisMarkers: {
+                            enabled: true,
+                            mode: 'xy'
+                        }
+                    },
+                    dataSeries: [{
+                        seriesType: 'line',
+                        collectionAlias: "Расходы в рублях",
+                        data: amount
+                    },
+                    {
+                        seriesType: 'line',
+                        collectionAlias: "Норма расходов на день",
+                        data: static
+                    }]
+                });
+            }
+        });
+    }
+
+    function GetDoughnutChartData(monthNumber) {
+        $.ajax({
+            url: '/Money/GetDoughnutChart',
+            type: 'GET',
+            data: { 'monthNumber': monthNumber },
+            success: function (response) {
+                console.log(response);
+
+                let category = response.category;
+                let amount = response.amount;
+
+                RefreshConvas();
+
+                var doughnutChart = new Chart($('#doughnutChart'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: category,
+                        datasets: [{
+                            data: amount,
+                            backgroundColor: ["#F7464A", "#46BFBD", "#FDB45C", "#949FB1", "#4D5360"],
+                            hoverBackgroundColor: ["#FF5A5E", "#5AD3D1", "#FFC870", "#A8B3C5", "#616774"]
+                        }]
+                    },
+                    options: {
+                        responsive: true
+                    }
+                });
+            }
+        });
+    }
+
+    function RefreshConvas() {
+        const canvas = document.querySelector('canvas')
+        const parent = canvas.parentNode
+        parent.removeChild(canvas)
+
+        var element = document.createElement('canvas');
+        element.setAttribute("id", "doughnutChart");
+        parent.appendChild(element);
+    }
+
+    function clearElement(parentSelector, clidrenSelector) {
+        var parent = document.querySelector(parentSelector);
+        var childrenCount = parent.children.length;
+        for (let i = 0; i < childrenCount; i++) {
+            let elem = document.querySelector(clidrenSelector);
+            parent.removeChild(elem);
+        }
+    }
+
+    function dateFormatter(value, row, index) {
+
+        if (value == '')
+        {
+            const newDate = new Date();
+
+            let currentDay = newDate.getDate();
+            let currentMonth = newDate.getMonth() + 1;
+            let currentYear = newDate.getFullYear();
+
+            let currentDate = `${currentDay}.0${currentMonth}.${currentYear}`;
+
+            return currentDate;
+        }
+
+        let day = value.substr(8, 2);
+        let month = value.substr(5, 2);
+        let year = value.substr(0, 4);
+
+        let date = `${day}.${month}.${year}`;
+
+        return date;
+    }
+
+</script>

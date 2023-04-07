@@ -1,0 +1,359 @@
+﻿@using LifeMaker.Models.ReferencePrices;
+@model ReferencePrices
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Prices";
+}
+
+<style>
+
+    .card {
+        font-size: 14px;
+    }
+
+    a:hover {
+        cursor: pointer;
+    }
+    
+</style>
+
+<div class="row shadow-lg p-3">
+
+<div class="row p-2">
+    <div class="col-sm-6 col-md-6 mb-2">
+        @Html.TextBoxFor(m => m.Name, new {@class = "form-control rounded-0", @placeholder = "Поиск", id = "searchCards"})
+    </div>
+    <div class="col-sm-2 col-md-2 mb-2">
+        @Html.DropDownListFor(m => m.CategoryId, Model.CategoryDDL, "Категория", new {@class = "form-select rounded-0", id = "searchCategory"})
+    </div>
+    <div class="col-sm-2 col-md-2 mb-2">
+        @Html.DropDownListFor(m => m.StoreId, Model.StoreDDL, "Магазин", new {@class = "form-select rounded-0", id = "searchStore"})
+    </div>
+    <div class="col-sm-2 col-md-2 mb-2">
+        <button class="purchasesTableToolbar btn btn-outline-primary rounded-0" id="insertRow"> Добавить новую запись</button>
+    </div>
+</div>
+
+<div class="row p-2" id="insertRowForm" style="display: none;">
+    <div class="col-sm-2 col-md-2 mb-2">@Html.TextBoxFor(m => m.Name, new {@class = "form-control rounded-0", @placeholder = "Наименование"})</div>
+    <div class="col-sm-2 col-md-2 mb-2">@Html.TextBoxFor(m => m.Price, new {@class = "form-control rounded-0", @placeholder = "Цена"})</div>
+    <div class="col-sm-2 col-md-2 mb-2">@Html.DropDownListFor(m => m.CategoryId, Model.CategoryDDL, "Категория", new {@class = "form-select rounded-0", id = "CategoryDDL"})</div>
+    <div class="col-sm-2 col-md-2 mb-2">@Html.DropDownListFor(m => m.StoreId, Model.StoreDDL, "Магазин", new {@class = "form-select rounded-0", id = "StoreDDL"})</div>
+    <div class="col-sm-2 col-md-2 mb-2">@Html.TextBox("NewStore", null, new {@class = "form-control rounded-0", @placeholder = "Новый магазин"})</div>
+    <div class="col-sm-2 col-md-2 mb-2">
+        <button class="btn btn-outline-success rounded-0" id="acceptRow"> Добавить</button>
+        <button class="btn btn-outline-danger rounded-0 pull-right" id="cancelRow"> Отмена</button>
+    </div>
+</div>
+
+<div class="row p-2" id="cardsPrices">
+    @*getContent()*@
+</div>
+
+</div>
+
+<script>
+
+    $("#insertRow").on("click", function (event) {
+        $('#Name').val('');
+        $('#Price').val('');
+        $('#CategoryDDL').val('');
+        $('#StoreDDL').val('');
+
+        $('#insertRow').hide();
+        $('#insertRowForm').fadeIn(1000);
+    });
+
+    $("#cancelRow").on("click", function (event) {
+        $('#insertRowForm').hide();
+        $('#insertRow').fadeIn(1000);
+    });
+
+    $('#acceptRow').on("click", function (event) {
+        var model = {
+            Name: $('#Name').val(),
+            Price: $('#Price').val(),
+            CategoryId: $('#CategoryDDL').val(),
+            StoreId: $('#StoreDDL').val()
+        };
+        $.ajax({
+            url: '/Prices/Create',
+            type: 'POST',
+            data: { 'model': model, 'newStore': $('#NewStore').val() },
+            success: function (response) {
+                getContent($('#searchCards').val(), $('#searchCategory').val(), $('#searchStore').val());
+                $('#insertRowForm').hide();
+                $('#insertRow').fadeIn(1000);
+            }
+        });
+    });
+
+    function clearElement(parentSelector, clidrenSelector)
+    {
+        var parent = document.querySelector(parentSelector);
+        var childrenCount = parent.children.length;
+        for (let i = 0; i < childrenCount; i++) {
+            let elem = document.querySelector(clidrenSelector);
+            parent.removeChild(elem);
+        }
+    }
+
+    function getContent(searchText, searchCategory, searchStore)
+    {
+        $.ajax({
+            url: '/Prices/Get',
+            type: 'GET',
+            data: { "searchText": searchText, "searchCategory": searchCategory, "searchStore": searchStore, },
+            success: function (response) {
+                console.log(response);
+                clearElement('#cardsPrices', '#cardsPrices > .products')
+                response.forEach((element) => {
+                    $('#cardsPrices').append(
+                    '<div class="col-sm-6 col-md-2 mb-4 products">'+
+                        '<div class="card rounded-0">'+
+                            '<div class="card-header">'+
+                                element.name +
+                            '</div>'+
+                            '<div class="card-body">'+
+                                'Цена: '+ element.price +
+                                '<br>'+
+                                'Магазин: '+ element.store.name +
+                        '<br>Категория: ' + element.category.name +
+                            '</div>'+
+                            '<div class="card-footer" style="font-size: 12px;">'+
+                                '<div class="col-sm-10 float-end">Обновление: ' + dateFormatter(element.updateDate, 'date') + '</div>'+ //type: 'date' 'time' 'datetime'
+                        '<div class="col-sm-2 float-start"><a class="float-start deleteCard" value="' + element.id + '">Удалить</a></div>' +
+                            '</div>'+
+                        '</div>'+
+                    '</div>');
+                })
+                $('.deleteCard').click(function () {
+                    var deleteId = this.getAttribute('value');
+                    if (window.confirm("Точно удаляем?")) {
+                        console.log('Запись удалена!');
+                        $.ajax({
+                            url: '/Prices/Delete',
+                            type: 'POST',
+                            data: { "Id": deleteId },
+                            success: function (response) {
+                                getContent($('#searchCards').val(), $('#searchCategory').val(), $('#searchStore').val());
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    function dateFormatter(value, type) {
+
+        let day = value.substr(8, 2);
+        let month = value.substr(5, 2);
+        let year = value.substr(0, 4);
+        let hour = value.substr(11, 2);
+        let min = value.substr(14, 2);
+        let sec = value.substr(17, 2);
+
+        let date = `${day}.${month}.${year}`;
+        let time = `${hour}:${min}:${sec}`;
+        let datetime = `${day}.${month}.${year} ${hour}:${min}:${sec}`;
+
+        switch(type)
+        {
+            case 'date': return date;
+            case 'time': return time;
+            case 'datetime': return datetime;
+        }
+    }
+
+    $('#searchCards').keyup(function () {
+        getContent($('#searchCards').val(), $('#searchCategory').val(), $('#searchStore').val());
+    })
+    
+    $('#searchCategory').change(function () {
+        getContent($('#searchCards').val(), $('#searchCategory').val(), $('#searchStore').val());
+    })
+    
+    $('#searchStore').change(function () {
+        getContent($('#searchCards').val(), $('#searchCategory').val(), $('#searchStore').val());
+    })
+
+    $(document).ready(function () {
+        getContent();
+    });
+    
+</script>
+
+<!--#region DataTable
+
+    jQuery Grid Bootstrap - https://gijgo.com/grid/demos/jquery-grid-bootstrap
+
+    $('#pricesTable').DataTable({
+        paging: true, //разбиение на страницы
+        ordering: true, //сортировка
+        info: true, //Showing 1 to 3 of 3 entries ("info": "Записи с _START_ до _END_ из _TOTAL_ записей",)
+
+        processing: true,
+        serverSide: true,
+        ajax: {
+            url:  '/Prices/Get',
+            type: 'POST'
+        },
+        columns: [
+            { title: 'Id', data: 'id' },
+            { title: 'Name', data: 'name' },
+            { title: 'Price', data: 'price' },
+            { title: 'Store', data: 'store' },
+            { title: 'Category', data: 'category' },
+            { title: 'Create Date', data: 'createDate' },
+            { title: 'Update Date', data: 'updateDate' },
+            { title: 'Is Active', data: 'isActive' }
+        ],
+
+        //order: [[3, 'desc']], //стартовая сортировка
+
+        language: { url: 'https://cdn.datatables.net/plug-ins/1.13.2/i18n/ru.json' }
+    });
+
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-9">
+                <form class="form-inline">
+                    <input id="txtName" type="text" placeholder="Name..." class="form-control mb-2 mr-sm-2 mb-sm-0" />
+                    <input id="txtPlaceOfBirth" type="text" placeholder="Place Of Birth..." class="form-control mb-2 mr-sm-2 mb-sm-0" />
+
+                    <button id="btnSearch" type="button" class="btn btn-default">Search</button> &nbsp;
+                    <button id="btnClear" type="button" class="btn btn-default">Clear</button>
+                </form>
+            </div>
+            <div class="col-3">
+                <button id="btnAdd" type="button" class="btn btn-default pull-right">Add New Record</button>
+            </div>
+        </div>
+        <div class="row" style="margin-top: 10px">
+            <div class="col-12">
+            <table id="grid" class="table table-bordered"></table>
+            </div>
+        </div>
+    </div>
+
+    <div id="dialog" style="display: none">
+        <input type="hidden" id="ID" />
+        <form>
+            <div class="form-group">
+                <label for="Name">Name</label>
+                <input type="text" class="form-control" id="Name">
+            </div>
+            <div class="form-group">
+                <label for="PlaceOfBirth">Place Of Birth</label>
+                <input type="text" class="form-control" id="PlaceOfBirth" />
+            </div>
+            <button type="button" id="btnSave" class="btn btn-default">Save</button>
+            <button type="button" id="btnCancel" class="btn btn-default">Cancel</button>
+        </form>
+    </div>
+
+    <script type="text/javascript">
+        var grid, dialog;
+        function Edit(e) {
+            $('#ID').val(e.data.id);
+            $('#Name').val(e.data.record.Name);
+            $('#PlaceOfBirth').val(e.data.record.PlaceOfBirth);
+            dialog.open('Edit Player');
+        }
+        function Save() {
+            var record = {
+                ID: $('#ID').val(),
+                Name: $('#Name').val(),
+                PlaceOfBirth: $('#PlaceOfBirth').val()
+            };
+            $.ajax({ url: '/Players/Save', data: { record: record }, method: 'POST' })
+                .done(function () {
+                    dialog.close();
+                    grid.reload();
+                })
+                .fail(function () {
+                    alert('Failed to save.');
+                    dialog.close();
+                });
+        }
+        function Delete(e) {
+            if (confirm('Are you sure?')) {
+                $.ajax({ url: '/Players/Delete', data: { id: e.data.id }, method: 'POST' })
+                    .done(function () {
+                        grid.reload();
+                    })
+                    .fail(function () {
+                        alert('Failed to delete.');
+                    });
+            }
+        }
+        $(document).ready(function () {
+            var grid, countries;
+            grid = $('#grid').grid({
+                dataSource: '/Prices/Get',
+                uiLibrary: 'bootstrap4',
+                primaryKey: 'id',
+                inlineEditing: { mode: 'command' },
+                columns: [
+                { field: 'id', width: 90 },
+                { field: 'name', editor: true },
+                { field: 'price', sortable: true, editor: true },
+                { field: 'store', type: 'dropdown', editField: 'storeId', editor: { dataSource: '/Prices/GetStores', valueField: 'id', textField: "name" } },
+                { field: 'category', type: 'dropdown', editField: 'categoryId', editor: { dataSource: '/Prices/GetCategories', valueField: 'id', textField: "name" } },
+                { field: 'createDate', type: 'date' },
+                { field: 'updateDate', type: 'date' },
+                { field: 'isActive', title: 'Active?', type: 'checkbox', width: 90, align: 'center', editor: true }
+                    { field: 'countryName', title: 'Nationality', type: 'dropdown', editField: 'CountryID', editor: { dataSource: '/Locations/GetCountries', valueField: 'id' } },
+                    { field: 'isActive', title: 'Active?', type: 'checkbox', editor: true, width: 90, align: 'center' }
+                ],
+                pager: { limit: 5 }
+            });
+            grid.on('rowDataChanged', function (e, id, record) {
+                $.ajax({ url: '/Prices/Save', data: { record }, method: 'POST' })
+                        .fail(function () {
+                            alert('Failed to save.');
+                        });
+            });
+            grid.on('rowRemoving', function (e, $row, id, record) {
+                if (confirm('Are you sure?')) {
+                    $.ajax({ url: '/Prices/Delete', data: { id: id }, method: 'POST' })
+                        .done(function () {
+                            grid.reload();
+                        })
+                        .fail(function () {
+                            alert('Failed to delete.');
+                        });
+                }
+            });
+        });
+
+        dialog = $('#dialog').dialog({
+            uiLibrary: 'bootstrap4',
+            iconsLibrary: 'fontawesome',
+            autoOpen: false,
+            resizable: false,
+            modal: true
+        });
+        $('#btnAdd').on('click', function () {
+            $('#ID').val('');
+            $('#Name').val('');
+            $('#PlaceOfBirth').val('');
+            dialog.open('Add Player');
+        });
+        $('#btnSave').on('click', Save);
+        $('#btnCancel').on('click', function () {
+            dialog.close();
+        });
+        $('#btnSearch').on('click', function () {
+            grid.reload({ name: $('#txtName').val(), placeOfBirth: $('#txtPlaceOfBirth').val() });
+        });
+        $('#btnClear').on('click', function () {
+            $('#txtName').val('');
+            $('#txtPlaceOfBirth').val('');
+            grid.reload({ name: '', placeOfBirth: '' });
+        });
+    </script>
+
+
+#endregion -->

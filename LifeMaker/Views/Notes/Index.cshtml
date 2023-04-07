@@ -1,0 +1,134 @@
+﻿@using LifeMaker.Models.Notes;
+@model IEnumerable<Notes>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Notes";
+
+    var SelectSort = new List<SelectListItem>() 
+    {
+        new SelectListItem() { Text = "Срочные", Value = "1" },
+        new SelectListItem() { Text = "Средние", Value = "2" },
+        new SelectListItem() { Text = "Подождут", Value = "3" }
+    };
+}
+
+<style>
+    rect:hover {
+        cursor:pointer;
+        fill:lightgrey;
+    }
+    svg:active {
+        width: 30px;
+        height: 30px;
+    }
+</style>
+
+    <div class="row shadow-lg p-3">
+
+        <div class="row border-bottom pb-2 mb-0">
+            <div class="col-md-6"><h4>Заметки (для удаления нажмите на цветной квадрат)</h4></div>
+            <div class="col-md-2">@Html.DropDownList("userNotes", ViewBag.Users, "Все отправители", new { @class = "form-select rounded-0" })</div>
+            <div class="col-md-2">@Html.DropDownList("periodNotes", SelectSort, "Все заметки", new { @class = "form-select rounded-0" })</div>
+            <div class="col-md-2">@Html.TextBox("searchNotes", null, new { @class = "form-control rounded-0", @placeholder = "Поиск" })</div>
+        </div>
+
+        <div class="d-flex text-muted pt-3 col-md-6 notes">
+
+                <svg class="rounded me-2" width="32" height="32" data-title="Удалить заметку"><rect width="100%" height="100%" fill="#DC143C"></rect></svg>
+            
+                <p class="pb-3 mb-0 small lh-sm border-bottom">
+
+                    <strong class="d-block text-gray-dark">Тестовая первая заметка</strong>
+
+                    Kirill
+
+                </p>
+
+        </div>
+
+        <div class="row" id="cardsNotes">
+            @*getContent()*@
+        </div>
+
+        @*<small class="d-block text-end mt-3">
+            <a href="#">All updates</a>
+        </small>*@
+
+    </div>
+
+<script>
+
+    function clearElement(parentSelector, clidrenSelector)
+    {
+        var parent = document.querySelector(parentSelector);
+        var childrenCount = parent.children.length;
+        for (let i = 0; i < childrenCount; i++) {
+            let elem = document.querySelector(clidrenSelector);
+            parent.removeChild(elem);
+        }
+    }
+
+    function getContent(searchText, sortText, userText) {
+        $.ajax({
+            url: '/Notes/Get',
+            type: 'GET',
+            data: { "searchText": searchText, "sortText": sortText, "userText": userText },
+            success: function (response) {
+
+                console.log(response);
+
+                clearElement('#cardsNotes', '#cardsNotes > .notes')
+
+                var colorBox = '';
+                response.forEach((element) => {
+                    switch (element.period) {
+                        case 'Срочная': colorBox = '<svg class="deleteCard rounded me-2" value="' + element.id + '" width="32" height="32"><rect width="100%" height="100%" fill="#DC143C"></rect></svg>'; break;
+                        case 'Средняя': colorBox = '<svg class="deleteCard rounded me-2" value="' + element.id + '" width="32" height="32"><rect width="100%" height="100%" fill="#FF8C00"></rect></svg>'; break;
+                        case 'Подождет': colorBox = '<svg class="deleteCard rounded me-2" value="' + element.id + '" width="32" height="32"><rect width="100%" height="100%" fill="#32CD32"></rect></svg>'; break;
+                    }
+                    $('#cardsNotes').append(
+                            '<div class="d-flex text-muted pt-3 col-md-6 notes">' +
+                                    colorBox +
+                                '<p class="pb-3 mb-0 small lh-sm border-bottom">' +
+                                    '<strong class="d-block text-gray-dark">' + element.text + '</strong>' +
+                                    element.sender +
+                                '</p>' +
+                            '</div>'
+                        );
+                })
+
+                $('.deleteCard').click(function () {
+                    var deleteId = this.getAttribute('value');
+                    if (window.confirm("Точно удаляем?")) {
+                        console.log('Запись удалена!');
+                        $.ajax({
+                            url: '/Notes/Delete',
+                            type: 'POST',
+                            data: { "Id": deleteId },
+                            success: function (response) {
+                                getContent($('#searchCards').val(), $('#searchCategory').val(), $('#searchStore').val());
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    }
+
+    $('#searchNotes').keyup(function () {
+        getContent($('#searchNotes').val(), $('#periodNotes').val(), $('#userNotes').val());
+    })
+
+    $('#periodNotes').change(function () {
+        getContent($('#searchNotes').val(), $('#periodNotes').val(), $('#userNotes').val());
+    })
+
+    $('#userNotes').change(function () {
+        getContent($('#searchNotes').val(), $('#periodNotes').val(), $('#userNotes').val());
+    })
+
+    $(document).ready(function () {
+        getContent();
+    });
+
+</script>

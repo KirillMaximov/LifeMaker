@@ -1,0 +1,117 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - LifeMaker</title>
+
+    <link href="~/lib/bootstrap/css/bootstrap.min.css" rel="stylesheet" />
+@*    <link href="~/lib/bootstrap/css/bootstrap.css" rel="stylesheet" />*@
+    <link href="~/lib/bootstrap/css/bootstrap.rtl.min.css" rel="stylesheet" />
+    <link href="~/lib/bootstrap/css/bootstrap-grid.min.css" rel="stylesheet" />
+    <link href="~/lib/bootstrap/css/bootstrap-grid.rtl.min.css" rel="stylesheet" />
+    <link href="~/lib/bootstrap/css/bootstrap-reboot.min.css" rel="stylesheet" />
+    <link href="~/lib/bootstrap/css/bootstrap-reboot.rtl.min.css" rel="stylesheet" />
+    <link href="~/lib/bootstrap/css/bootstrap-utilities.min.css" rel="stylesheet" />
+    <link href="~/lib/bootstrap/css/bootstrap-utilities.rtl.min.css" rel="stylesheet" />
+
+    <script src="~/lib/bootstrap/js/bootstrap.min.js"></script>
+    <script src="~/lib/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+    <script src="~/lib/jquery/jquery.min.js"></script>
+
+    <link href="~/lib/gijgo/css/gijgo.min.css" rel="stylesheet" />
+    <script src="~/lib/gijgo/js/gijgo.min.js"></script>
+
+    <link href="~/lib/data-tables/css/jquery.datatables.min.css" rel="stylesheet" />
+    <script src="~/lib/data-tables/js/jquery.datatables.min.js"></script>
+    <script src="//cdn.datatables.net/plug-ins/1.13.2/i18n/ru.json" type="application/json"></script>
+
+    <link href="~/lib/bootstrap-table/css/bootstrap-table.min.css" rel="stylesheet" />
+    <script src="~/lib/bootstrap-table/js/bootstrap-table.min.js"></script>
+    <script src="~/lib/bootstrap-table/js/bootstrap-table-ru-ru.js?v=2"></script>
+
+    <script src="~/lib/datetimepicker/jquery.datetimepicker.full.min.js"></script>
+    <link href="~/lib/datetimepicker/jquery.datetimepicker.min.css" rel="stylesheet" />
+
+    <link rel="stylesheet" href="~/css/site.css?v=7" asp-append-version="true" />
+    <link rel="stylesheet" href="~/LifeMaker.styles.css" asp-append-version="true" />
+    <script src="~/js/site.js" asp-append-version="true"></script>
+</head>
+<body>
+@*    <header class="navbar navbar-dark bg-dark flex-md-nowrap p-0">
+
+        <a style="color: rgba(var(--bs-dark-rgb), var(--bs-bg-opacity));" class="navbar-brand col-md-3 col-lg-2" href="#">Company name</a>
+
+    </header>*@
+
+    <header class="navbar navbar-dark sticky-top bg-dark flex-md-nowrap p-0 shadow" style="height: 50px;">
+        <div></div>
+@*        <a class="navbar-brand col-md-1 col-lg-2 me-0 px-3 fs-6" href="#" style="color: white;">Company name</a>*@
+@*        <button class="navbar-toggler position-absolute d-md-none collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#sidebarMenu" aria-controls="sidebarMenu" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>*@
+        @*<input class="form-control form-control-dark w-100 rounded-0 border-0" type="text" placeholder="Search" aria-label="Search">*@
+        <div class="navbar-nav">
+            <div class="nav-item text-nowrap">
+                <a class="nav-link px-3" href="#" style="color: white;">Sign out</a>
+            </div>
+        </div>
+    </header>
+
+    <style>
+        #sidebarMenu > div > ul > li > a {
+            color: black;
+        }
+
+        #sidebarMenu > div > ul > li > .active {
+            font-weight: 700;
+        }
+
+        #sidebarMenu > div > ul > li > a:not(.active):hover {
+            cursor: pointer;
+            color: grey;
+        }
+    </style>
+
+    <div class="container-fluid">
+        <div class="d-flex">
+            <nav id="sidebarMenu" class="d-flex flex-column flex-shrink-0 p-3 bg-light sidebar collapse">
+                <div class="position-sticky sidebar-sticky">
+                    <ul class="nav flex-column nav-tabs">
+                        <li class="nav-item"><a class="nav-link rounded-0" asp-controller="Money" asp-action="Index">Денежные затраты</a></li>
+                        <li class="nav-item"><a class="nav-link rounded-0" asp-controller="Prices" asp-action="Index">Эталонные цены</a></li>
+                        <li class="nav-item"><a class="nav-link rounded-0" asp-controller="Notes" asp-action="Index">Заметки</a></li>
+                        <li class="nav-item"><a class="nav-link rounded-0" asp-controller="Knowledge" asp-action="Index">База знаний</a></li>
+                        <li class="nav-item"><a class="nav-link rounded-0" asp-controller="top3" asp-action="Index">Необходимые покупки</a></li>
+                        <li class="nav-item"><a class="nav-link rounded-0" asp-controller="top4" asp-action="Index">Автомобиль</a></li>
+                        <li class="nav-item"><a class="nav-link rounded-0" asp-controller="top5" asp-action="Index">Квартира</a></li>
+                        <li class="nav-item"><a class="nav-link rounded-0" asp-controller="top6" asp-action="Index">Здоровье</a></li>
+                        <li class="nav-item"><a class="nav-link rounded-0" asp-controller="top8" asp-action="Index">Близкие</a></li>
+                    </ul>
+                </div>
+            </nav>
+            <script>
+                $(function() {
+                    if (location.pathname != '/')
+                    {
+                        $('nav a[href^="/' + location.pathname.split("/")[1] + '"]').addClass('active');
+                    }
+                });
+            </script>
+            <main class="ms-sm-auto px-md-4">
+                <div class="pt-3"></div>
+                @RenderBody()
+            </main>
+        </div>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2023 - LifeMaker - <a asp-area="" asp-page="/Privacy">Privacy</a>
+        </div>
+    </footer>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

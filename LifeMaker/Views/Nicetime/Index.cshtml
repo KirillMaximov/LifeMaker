@@ -1,0 +1,82 @@
+﻿@using LifeMaker.Models.NiceTime;
+@model IEnumerable<NiceTime>
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Nice time";
+}
+
+    <div class="row shadow-lg p-3">
+
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Перейти</th>
+                    <th>Сылка</th>
+                    <th>Название</th>
+                    <th>Описание</th>
+                    <th>Удалить</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                <tr>
+                    <td>
+                        <a target="_blank" rel="noopener noreferrer" 
+                        href="@item.Link">
+                        @item.Name</a>
+                    </td>
+                    <td>@item.Link</td>
+                    <td>@item.Name</td>
+                    <td>@item.Description</td>
+                    <td><button class="btn btn-outline-danger rounded-0 deleteLink" value="@item.Id">Х</button></td>
+                </tr>
+                }
+                <tr>
+                    <td><button class="btn btn-outline-primary rounded-0" id="insertLink">Добавить новую запись</button></td>
+                    <td>@Html.TextBox("newLink", null, new { @class = "form-control rounded-0", @placeholder = "Ссылка" })</td>
+                    <td>@Html.TextBox("newName", null, new { @class = "form-control rounded-0", @placeholder = "Наименование" })</td>
+                    <td>@Html.TextBox("newDescription", null, new { @class = "form-control rounded-0", @placeholder = "Описание" })</td>
+                </tr>
+            </tbody>
+        </table>
+
+    </div>
+
+    <script type="text/javascript">
+
+    $('#insertLink').click(function(){
+        $.ajax({
+            url: '/Nicetime/Save',
+            type: 'POST',
+            data: { 
+                "newLink": $('#newLink').val(), 
+                "newName": $('#newName').val(),
+                "newDescription": $('#newDescription').val() 
+            },
+            success: function (response) {
+                if (response) {
+                    window.location.reload()
+                }
+            }
+        });
+    });
+
+    $('.deleteLink').click(function(){
+        let linkId = $(this).val();
+
+        $.ajax({
+            url: '/Nicetime/Delete',
+            type: 'POST',
+            data: {
+                "linkId": linkId
+            },
+            success: function (response) {
+                if (response) {
+                    window.location.reload()
+                }
+            }
+        });
+    });
+
+    </script>

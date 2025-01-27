@@ -37,6 +37,20 @@
         </div>
     </div>*@
 
+    <div class="row knowledge">
+        <strong class="collapseButton">Заблокированные транзакции</strong>
+        <div class="col mb-2 mt-2">
+            <div class="collapse multi-collapse" style="display: none;">
+                <div class="card card-body">
+                    SELECT * FROM master.dbo.sysprocesses
+                    WHERE blocked <> 0
+                    order by blocked
+                @*<a target="_blank" href="@item.Link">@item.Name</a>*@
+                </div>
+            </div>
+        </div>
+    </div>
+
 </div>
 
 <script>

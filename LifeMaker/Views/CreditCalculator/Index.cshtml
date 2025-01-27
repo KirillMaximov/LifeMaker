@@ -1,0 +1,200 @@
+﻿@*
+    For more information on enabling MVC for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+*@
+@{
+    Layout = "_Layout";
+    ViewData["Title"] = "Credit calculator";
+}
+
+@*<script src="https://api-maps.yandex.ru/2.1/?lang=ru_RU&apikey=11a8f901-241d-4650-b5c2-e8281f592fd0&suggest_apikey=7d7623ae-34de-4266-817e-dae2294eb4b2"></script>
+
+<style type="text/css">
+    html, body, #map {
+            width: 100%; height: 100%; padding: 0; margin: 0;
+        }
+</style>
+
+<input type="text" id="suggest" class="form-control" />
+<div id="map"></div>*@
+
+@*<script>
+
+    $(document).ready(function () {
+        ymaps.ready(init);
+
+        function init() {
+            var myPlacemark,
+            myMap = new ymaps.Map('map', {
+                center: [55.753994, 37.622093],
+                zoom: 9
+            }, {
+                searchControlProvider: 'yandex#search'
+            });
+
+            var fromInput = $('#suggest'),
+                suggestView = new ymaps.SuggestView('suggest', { boundedBy: [[45.474531, 33.054360], [68.246032, 179.798108]] }),
+                selectValue; //*Объявил переменую в общей обл. видимости для обоих обработчиков
+
+            suggestView.events.add('select', function (e) {
+                selectValue = e.get('item').value;
+                onSearch(selectValue); //*Тут передаю выбранное значение в функцию, при этом событие change не срабатывает
+
+            });
+
+            fromInput.on('change', function (evt) {
+                var _this = $(this);
+
+                setTimeout(function () {
+                    var value = _this.val();
+
+                    if (value !== selectValue)
+                        onSearch(value); //*Добавил проверку совпадает ли значение input со значеним выбраного селекта
+
+                }, 1000);
+
+            });
+
+            function onSearch(point) {
+                //Дальше получение координат и остальной код
+                console.log('point = ' + point);
+                var myGeocoder = ymaps.geocode(point);
+
+                myGeocoder.then(
+                    function (res) {
+                        let coordinates = res.geoObjects.get(0).geometry.getCoordinates();
+
+                        if (myPlacemark) {
+                            myPlacemark.geometry.setCoordinates(coordinates);
+                        }
+                        // Если нет – создаем.
+                        else {
+                            myPlacemark = createPlacemark(coordinates);
+                            myMap.geoObjects.add(myPlacemark);
+                            // Слушаем событие окончания перетаскивания на метке.
+                            myPlacemark.events.add('dragend', function () {
+                                getAddress(myPlacemark.geometry.getCoordinates());
+                            });
+                        }
+
+                        getAddress(coordinates);
+                    },
+                    function (err) {
+                        console.log('Ошибка');
+                    }
+                );
+            }
+
+            // Создание метки.
+            function createPlacemark(coords) {
+                return new ymaps.Placemark(coords, {
+                    iconCaption: 'поиск...'
+                }, {
+                    preset: 'islands#violetDotIconWithCaption',
+                    draggable: true
+                });
+            }
+
+            // Слушаем клик на карте.
+            myMap.events.add('click', function (e) {
+                var coords = e.get('coords');
+
+                // Если метка уже создана – просто передвигаем ее.
+                if (myPlacemark) {
+                    myPlacemark.geometry.setCoordinates(coords);
+                }
+                // Если нет – создаем.
+                else {
+                    myPlacemark = createPlacemark(coords);
+                    myMap.geoObjects.add(myPlacemark);
+                    // Слушаем событие окончания перетаскивания на метке.
+                    myPlacemark.events.add('dragend', function () {
+                        getAddress(myPlacemark.geometry.getCoordinates());
+                    });
+                }
+                getAddress(coords);
+            });
+
+            // Определяем адрес по координатам (обратное геокодирование).
+            function getAddress(coords) {
+                myPlacemark.properties.set('iconCaption', 'поиск...');
+                ymaps.geocode(coords).then(function (res) {
+                    var firstGeoObject = res.geoObjects.get(0);
+                    myPlacemark.properties
+                        .set({
+                            // Формируем строку с данными об объекте.
+                            iconCaption: firstGeoObject.getAddressLine(), 
+                        });
+                    $('#suggest').val(firstGeoObject.getAddressLine());
+
+                    myMap.setCenter(coords, 16);
+                });
+            }
+        }
+    });
+
+</script>*@
+
+<div class="row shadow-lg p-3">
+    <div class="col-md-12">
+        <div class="row p-2">
+            <div class="row mb-2">
+                <div class="col-md-6"><label>Сумма кредита/ипотеки</label></div>
+                <div class="col-md-6"><input id="CreditAmount" class="form-control rounded-0" /></div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-md-6"><label>Годовой процент</label></div>
+                <div class="col-md-6"><input id="YearPercent" class="form-control rounded-0" /></div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-md-6"><label>Ежемесячный платеж</label></div>
+                <div class="col-md-6"><input id="MonthAmount" class="form-control rounded-0" /></div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-md-12"><button id="Calculate" class="btn btn-outline-primary rounded-0">Посчитать</button></div>
+            </div>
+            <div class="row mb-2">
+                <div class="col-md-12"><lable id="AllMonth"></lable></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    $(document).ready(function () {
+        
+    });
+
+    $('#Calculate').click(function(){
+        $.ajax({
+            url: '/CreditCalculator/Calculate',
+            type: 'POST',
+            data: { "creditAmount": $('#CreditAmount').val(), "yearPercent": $('#YearPercent').val(), "monthAmount": $('#MonthAmount').val() },
+            success: function (response) {
+                console.log(response);
+                console.log(response.yearCount);
+                console.log(response.monthCount);
+
+                var yearText = '';
+                var monthText = '';
+
+                if (response.yearCount > 4) {
+                    yearText = response.yearCount + ' лет и ';
+                } else if (response.yearCount > 0) {
+                    yearText = response.yearCount + ' года и ';
+                }
+
+                if (response.monthCount == 1) {
+                    monthText = response.monthCount + ' месяц до конца кредита/ипотеки';
+                } else if (response.monthCount > 1 && response.monthCount < 5) { 
+                    monthText = response.monthCount + ' месяца до конца кредита/ипотеки';
+                } else if (response.monthCount > 4 || response.monthCount == 0) { 
+                    monthText = response.monthCount + ' месяцев до конца кредита/ипотеки';
+                }
+
+                $('#AllMonth').text(yearText + monthText);
+            }
+        });
+    })
+
+</script>
